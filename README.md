@@ -16,3 +16,149 @@ To make and send stream of ROS 2 images captured from carmera attached to Robot.
 
 ---
 
+# ROS Streamer
+
+This is a ROS package that streams images from a camera to zmq sockets. It use to be a federated learning perception system.
+
+## Ros Streamer Server Node
+
+The streamer node is a ROS node that streams images from a camera to zmq sockets.
+
+### 1. Ros Streamer Build
+
+```bash
+# Makefile build
+make build
+```
+
+### 2. Ros Streamer Launch
+
+```bash
+# Makefile launch
+make launch
+```
+
+### 3. Docker Build and Push
+
+```bash
+# Makefile build
+make docker-build
+
+# Makefile build and push
+make docker-push
+```
+
+### 4. Kubernetes Deploy
+
+```bash
+# Kubernetes deploy
+cd src/ros_streamer_server/kube
+kubectl apply -f ros-streamer-deployment.yaml
+```
+
+### 5. Kubernetes Delete
+# ROS Streamer
+
+This is a ROS package that streams images from a camera to zmq sockets. It use to be a federated learning perception system.
+
+## Ros Streamer Server Node
+
+The streamer node is a ROS node that streams images from a camera to zmq sockets.
+
+### 1. Ros Streamer Build
+
+```bash
+# Makefile build
+make build
+```
+
+### 2. Ros Streamer Launch
+
+```bash
+# Makefile launch
+make launch
+```
+
+### 3. Docker Build and Push
+
+```bash
+# Makefile build
+make docker-build
+
+# Makefile build and push
+make docker-push
+```
+
+### 4. Kubernetes Deploy
+
+```bash
+# Kubernetes deploy
+cd src/ros_streamer_server/kube
+kubectl apply -f ros-streamer-deployment.yaml
+```
+
+### 5. Kubernetes Delete
+
+```bash
+# Kubernetes delete
+cd src/ros_streamer_server/kube
+kubectl delete -f ros-streamer-deployment.yaml
+```
+
+## Ros Streamer Viewer
+
+The viewer is a python script that subscribes to the zmq socket and displays the images.
+
+### 1. Ros Streamer Viewer Build
+
+```bash
+pyinstaller --onefile viewer/viewer.py
+```
+
+### 2. Ros Streamer Viewer Run
+
+```bash
+# Default viewer (localhost:5555)
+./dist/viewer run
+```
+
+### 3. Ros Streamer Viewer Run with Arguments
+
+```bash
+# Viewer with arguments
+./dist/viewer run --host 136.166.201.33 --port 15555
+# Short version
+./dist/viewer run -h 136.166.201.33 -p 15555
+```
+
+```bash
+# Kubernetes delete
+cd src/ros_streamer_server/kube
+kubectl delete -f ros-streamer-deployment.yaml
+```
+
+## Ros Streamer Viewer
+
+The viewer is a python script that subscribes to the zmq socket and displays the images.
+
+### 1. Ros Streamer Viewer Build
+
+```bash
+pyinstaller --onefile viewer/viewer.py
+```
+
+### 2. Ros Streamer Viewer Run
+
+```bash
+# Default viewer (localhost:5555)
+./dist/viewer run
+```
+
+### 3. Ros Streamer Viewer Run with Arguments
+
+```bash
+# Viewer with arguments
+./dist/viewer run --host 136.166.201.33 --port 15555
+# Short version
+./dist/viewer run -h 136.166.201.33 -p 15555
+```

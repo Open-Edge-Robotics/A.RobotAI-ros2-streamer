@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ros-streamer
+  namespace: robot
+  labels:
+    app: ros-streamer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ros-streamer
+  template:
+    metadata:
+      labels:
+        app: ros-streamer
+        name: ros-streamer
+    spec:
+      hostNetwork: true
+      containers:
+        - name: ros-streamer
+          image: docker.io/lgecloudroboticstask/fl:ros-streamer-20241203
+          imagePullPolicy: Always
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - . /opt/ros/${ROS_DISTRO}/setup.bash; . install/setup.bash; ros2 launch ros_stream_server stream_server.launch.py port:=15555 image_raw:=/device/front_d435_camera/front_d435_camera/color/image_raw compressed_image_raw:=/device/front_d435_camera/front_d435_camera/color/image_raw;
+          env:
+            - name: ROS_DOMAIN_ID
+              value: "222"
+            - name: ROS_LOCALHOST_ONLY
+              value: "1"
+            - name: RMW_IMPLEMENTATION
+              value: "rmw_cyclonedds_cpp"
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 500Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      imagePullSecrets:
+        - name: regcred
+      nodeSelector:
+        node-role.kubernetes.io/master: "true"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   namespace: robot
+#   name: ros-streamer-svc
+# spec:
+#   type: NodePort
+#   selector:
+#     app: ros-streamer
+#   ports:
+#     - name: raw
+#       protocol: TCP
+#       port: 5555
+#       nodePort: 30555
+#     - name: compressed
+#       protocol: TCP
+#       port: 5556
+#       nodePort: 30556
