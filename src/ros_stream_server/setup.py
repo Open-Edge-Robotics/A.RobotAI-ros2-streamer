@@ -16,10 +16,7 @@ setup(
             glob.glob(os.path.join("launch", "*.launch.py")),
         ),
     ],
-    install_requires=[
-        "setuptools",
-        "pyzmq",
-    ],
+    install_requires=["setuptools", "pyzmq", "ultralytics", "cv_bridge"],
     zip_safe=True,
     maintainer="seoyc",
     maintainer_email="seo.youngchae@lgepartner.com",

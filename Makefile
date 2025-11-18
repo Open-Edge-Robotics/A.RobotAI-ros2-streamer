@@ -1,88 +1,111 @@
-# Makefile for building and launching a ROS2_PATH Python package
+# Makefile for ros-streamer project
 
-# Package name
-PACKAGE_NAME=ros_stream_server
-NODE_NAME=stream_server
+# ==============================================================================
+# Variables
+# ==============================================================================
 
-ROS2_PATH:=/opt/ros/$(ROS_DISTRO)
+# Shell
+SHELL := /bin/bash
 
-PYTHON=python3
-SHELL:=/bin/bash
-CURRENT_DIR := $(shell pwd)
+# Project settings
+PROJECT_NAME := ros-streamer
+PACKAGE_NAME := ros_stream_server
+NODE_NAME := stream_server
+PYTHON := python3
 
-# Docker variables
-DOCKER_ORG = lgecloudroboticstask
-DOCKER_IMAGE = fl
-DOCKER_TAG := ros-streamer-$(shell date +%Y%m%d)
+# ROS settings
+ROS_DISTRO ?= humble
+ROS2_SETUP := /opt/ros/$(ROS_DISTRO)/setup.bash
+WS_SETUP := $(shell pwd)/install/setup.bash
+
+# Docker settings
+DOCKER_IMAGE_NAME := $(PROJECT_NAME)
+DOCKER_TAG := latest
+DOCKER_FULL_IMAGE_NAME := $(DOCKER_IMAGE_NAME):$(DOCKER_TAG)
+
+# Kubernetes settings
+KUBE_DEPLOYMENT_FILE := src/ros_stream_server/kube/ros-streamer-deployment.yaml
+
+
+# ==============================================================================
+# Targets
+# ==============================================================================
+
+.PHONY: all help deps build build-symlink run launch test view clean docker-build docker-push docker-all
 
 all: build
 
-dep:
-	@echo "Installing dependencies..."
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  help                  - Show this help message"
+	@echo ""
+	@echo "  --- Development ---"
+	@echo "  deps                  - Install Python and ROS dependencies"
+	@echo "  build                 - Build the ROS package"
+	@echo "  build-symlink         - Build with symlink install for faster development"
+	@echo "  run                   - Run the stream_server node"
+	@echo "  launch                - Launch the stream_server using its launch file"
+	@echo "  test                  - Run automated tests for the package"
+	@echo "  view                  - Run the separate viewer application"
+	@echo "  clean                 - Remove build, install, and log artifacts"
+	@echo ""
+	@echo "  --- Docker ---"
+	@echo "  docker-build          - Build the Docker image for the project"
+	@echo "  docker-push           - Push the Docker image to a registry"
+	@echo "  docker-all            - Build and push the Docker image"
+
+
+# --- Development Targets ---
+
+deps:
+	@echo "--> Installing Python dependencies from requirements.txt..."
 	$(PYTHON) -m pip install -r requirements.txt
-	. $(ROS2_PATH)/setup.bash && rosdep install --from-paths src --ignore-src -r -y
+	@echo "--> Installing ROS dependencies..."
+	@. $(ROS2_SETUP) && rosdep install --from-paths src --ignore-src -r -y || echo "rosdep check failed, continuing..."
 
-build: dep
-	@echo "Building package..."
-	. $(ROS2_PATH)/setup.bash && colcon build
+build: deps
+	@echo "--> Building ROS package..."
+	. $(ROS2_SETUP) && colcon build
 
-build-symlink-install: dep
-	@echo "Building package with symlink install..."
-	. $(ROS2_PATH)/setup.bash && colcon build --symlink-install
+build-symlink: deps
+	@echo "--> Building ROS package with symlink install..."
+	. $(ROS2_SETUP) && colcon build --symlink-install
 
 run: build
-	@echo "Running package..."
-	. $(ROS2_PATH)/setup.bash && . install/setup.bash && ros2 run $(PACKAGE_NAME) $(NODE_NAME)
+	@echo "--> Running node [$(NODE_NAME)] from package [$(PACKAGE_NAME)]..."
+	. $(ROS2_SETUP) && . $(WS_SETUP) && ros2 run $(PACKAGE_NAME) $(NODE_NAME)
 
 launch: build
-	. $(ROS2_PATH)/setup.bash && . install/setup.bash && ros2 launch $(PACKAGE_NAME) $(NODE_NAME).launch.py
+	@echo "--> Launching [$(NODE_NAME).launch.py]..."
+	. $(ROS2_SETUP) && . $(WS_SETUP) && ros2 launch $(PACKAGE_NAME) $(NODE_NAME).launch.py
+
+test: build
+	@echo "--> Running tests..."
+	. $(ROS2_SETUP) && colcon test
+	@echo "--> Test results are available in the 'log' directory."
 
 view:
-	$(PYTHON) viewer/viewer.py
-
-docker-build:
-	@echo Building Streamer Docker image...
-	cd src/ros_stream_server && docker build -t $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo Updating Kubernetes deployment...
-	@sed -i 's|image: $(DOCKER_ORG)/$(DOCKER_IMAGE):.*|image: $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)|' src/ros_stream_server/kube/deployment.yaml
-	@echo Streamer Docker image built.
-
-docker-push: docker-build
-	@echo Pushing Streamer Docker image...
-	@docker push $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-	@echo Streamer Docker image pushed.
-
-podman-build:
-	@echo Building Streamer Podman image...
-	cd src/ros_stream_server && podman build -t $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo Updating Kubernetes deployment...
-	@sed -i 's|image: $(DOCKER_ORG)/$(DOCKER_IMAGE):.*|image: $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)|' src/ros_stream_server/kube/ros-streamer-deployment.yaml
-	@echo Streamer Podman image built.
-
-podman-push: podman-build
-	@echo Pushing Streamer Podman image...
-	@podman push docker.io/$(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-	@echo Streamer Podman image pushed.
-
-docker-clean:
-	@echo Cleaning up Docker images...
-ifeq ($(shell docker images -q $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)),)
-	@echo No Docker image found.
-else
-	docker rmi $(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-endif
-	@echo Docker images cleaned.
-
-podman-clean:
-	@echo Cleaning up Podman images...
-ifeq ($(shell podman images -q docker.io/$(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)),)
-	@echo No Podman image found.
-else
-	podman rmi docker.io/$(DOCKER_ORG)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-endif
-	@echo Podman images cleaned.
+	@echo "--> Starting viewer application..."
+	$(PYTHON) ros_stream_viewer/viewer.py
 
 clean:
+	@echo "--> Cleaning up build artifacts..."
 	rm -rf build install log
 
-.PHONY: all dep build build-symlink-install run launch view docker-build docker-push podman-build podman-push docker-clean podman-clean clean
+
+# --- Docker Targets ---
+
+docker-build:
+	@echo "--> Building Docker image: $(DOCKER_FULL_IMAGE_NAME)"
+	@docker build -t $(DOCKER_FULL_IMAGE_NAME) .
+	@echo "--> Updating Kubernetes deployment file with new image tag..."
+	@sed -i 's|image: .*|image: $(DOCKER_FULL_IMAGE_NAME)|' $(KUBE_DEPLOYMENT_FILE)
+	@echo "--> Build complete. Image: $(DOCKER_FULL_IMAGE_NAME)"
+
+docker-push:
+	@echo "--> Pushing Docker image: $(DOCKER_FULL_IMAGE_NAME)"
+	@docker push $(DOCKER_FULL_IMAGE_NAME)
+
+docker-all: docker-build docker-push

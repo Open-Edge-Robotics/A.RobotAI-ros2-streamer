@@ -1,0 +1,15 @@
+[project]
+name = "ros-streamer"
+version = "0.1.0"
+description = "This is a ros-streamer package"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fire>=0.7.1",
+    "pyzmq>=27.1.0",
+    "ultralytics>=8.3.221",
+]
+
+[tool.setuptools.packages.find]
+include = ["ros_stream_viewer"]
+exclude = ["src", "ros_stream_server"]

@@ -13,11 +13,6 @@ def generate_launch_description():
         description="Stream server namespace for the nodes",
     )
 
-    topic = LaunchConfiguration("topic")
-    topic_cmd = DeclareLaunchArgument(
-        "topic", default_value="stream", description="Stream server publish topic name"
-    )
-
     port = LaunchConfiguration("port")
     port_cmd = DeclareLaunchArgument(
         "port", default_value="5555", description="TCP port for images streaming"
@@ -52,7 +47,6 @@ def generate_launch_description():
         namespace=namespace,
         parameters=[
             {
-                "topic": topic,
                 "port": port,
                 "image_raw": image_raw,
                 "compressed_image_raw": compressed_image_raw,
@@ -61,15 +55,13 @@ def generate_launch_description():
         ],
     )
 
-    ld = LaunchDescription()
-
-    ld.add_action(topic_cmd)
-    ld.add_action(port_cmd)
-    ld.add_action(image_raw_cmd)
-    ld.add_action(compressed_image_raw_cmd)
-    ld.add_action(image_reliability_cmd)
-    ld.add_action(namespace_cmd)
-
-    ld.add_action(stream_server_node_cmd)
-
-    return ld
+    return LaunchDescription(
+        [
+            port_cmd,
+            image_raw_cmd,
+            compressed_image_raw_cmd,
+            image_reliability_cmd,
+            namespace_cmd,
+            stream_server_node_cmd,
+        ]
+    )
